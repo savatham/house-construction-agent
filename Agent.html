@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vikaspuri House — Apartment Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--surface:#161b22;--card:#21262d;--border:#30363d;
+  --accent:#f0883e;--accent2:#58a6ff;--text:#c9d1d9;--muted:#8b949e;
+  --user-bubble:#1f3a5f;--bot-bubble:#161b22;--radius:12px;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+}
+html{
+  height:100%;
+  width:100%;
+  overflow:hidden;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  height:100vh;
+  height:100dvh;
+  height:var(--app-height,100dvh);
+  max-height:100vh;
+  max-height:100dvh;
+  max-height:var(--app-height,100dvh);
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:fixed;
+  inset:0;
+}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.logo{width:42px;height:42px;background:linear-gradient(135deg,#f0883e,#c0392b);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.htext h1{font-family:var(--font-head);font-size:16px;font-weight:700;color:#fff}
+.htext p{font-size:11px;color:var(--muted);margin-top:1px}
+.hright{margin-left:auto;display:flex;align-items:center;gap:10px}
+.status{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:#f55;transition:background .3s}
+.dot.ok{background:#3fb950}
+.setup-btn{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-body)}
+.setup-btn:hover{border-color:#58a6ff;color:#58a6ff}
+
+.config{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 18px;display:none;flex-direction:column;gap:10px;flex:0 0 auto;max-height:45vh;overflow-y:auto}
+.config-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cfg-label{font-size:11px;color:var(--muted);min-width:110px}
+.cfg-input{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:12px;padding:7px 11px;border-radius:8px;outline:none;min-width:220px}
+.cfg-input:focus{border-color:#58a6ff}
+.cfg-input::placeholder{color:var(--muted)}
+.cfg-save{background:#58a6ff;color:#fff;border:none;font-family:var(--font-body);font-size:12px;font-weight:500;padding:7px 18px;border-radius:8px;cursor:pointer}
+.cfg-save:hover{opacity:.85}
+.cfg-note{font-size:11px;color:#f85149;background:#3d1010;padding:7px 11px;border-radius:7px;border:1px solid #6e1a1a}
+.cfg-info{font-size:11px;color:var(--muted);background:var(--card);padding:7px 11px;border-radius:7px;border:1px solid var(--border);line-height:1.6}
+
+.chat{
+  flex:1 1 0;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:16px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  scroll-behavior:smooth;
+}
+.chat::-webkit-scrollbar{width:4px}
+.chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.msg{display:flex;gap:9px;align-items:flex-start;max-width:88%}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg.bot{align-self:flex-start}
+.av{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.msg.user .av{background:#f0883e;color:#fff;font-weight:700;font-family:var(--font-head)}
+.msg.bot .av{background:#58a6ff;color:#fff}
+.bub{padding:11px 15px;border-radius:var(--radius);font-size:13.5px;line-height:1.65}
+.msg.user .bub{background:var(--user-bubble);border-bottom-right-radius:3px}
+.msg.bot .bub{background:var(--bot-bubble);border:1px solid var(--border);border-bottom-left-radius:3px}
+.bub strong{color:#f0883e;font-weight:500}
+.bub ul{padding-left:16px;margin-top:5px}
+.bub li{margin-top:3px}
+.bub a{color:#58a6ff;text-decoration:none}
+
+.typing-dots{display:flex;gap:4px;padding:12px 15px;align-items:center}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:tdot 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+.quick{
+  padding:0 18px 10px;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  flex:0 0 auto;
+  max-height:72px;
+  overflow-y:auto;
+}
+.qbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11.5px;padding:5px 11px;border-radius:20px;cursor:pointer;font-family:var(--font-body);transition:all .15s}
+.qbtn:hover{border-color:#f0883e;color:#f0883e}
+.qbtn:disabled{opacity:.45;cursor:not-allowed}
+
+.limit{font-size:11px;color:var(--muted);padding:0 18px 8px;display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.limit.warn{color:#f0883e}
+
+.input-row{
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+  display:flex;
+  gap:9px;
+  align-items:flex-end;
+  flex:0 0 auto;
+  position:relative;
+  z-index:20;
+}
+.ibox{flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:flex-end;gap:7px;padding:9px 12px;transition:border-color .15s}
+.ibox:focus-within{border-color:#58a6ff}
+textarea{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--font-body);font-size:13.5px;resize:none;max-height:90px;line-height:1.5}
+textarea::placeholder{color:var(--muted)}
+.sbtn{background:#f0883e;border:none;color:#fff;width:32px;height:32px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sbtn:hover{opacity:.85}
+.sbtn:disabled{opacity:.45;cursor:not-allowed}
+.sbtn svg{width:14px;height:14px}
+.lbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;width:42px;height:42px;border-radius:var(--radius);cursor:pointer;font-family:var(--font-head);transition:all .15s}
+.lbtn.te{border-color:#f0883e;color:#f0883e}
+
+.welcome{text-align:center;padding:20px 16px;color:var(--muted)}
+.welcome .wicon{font-size:40px;margin-bottom:8px}
+.welcome h2{font-family:var(--font-head);font-size:16px;color:var(--text);margin-bottom:6px}
+.welcome p{font-size:12.5px;line-height:1.7}
+.welcome .steps{margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 16px;font-size:12px;text-align:left;line-height:2}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#21262d;border:1px solid var(--border);color:var(--text);padding:7px 16px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99;white-space:nowrap}
+.toast.show{opacity:1}
+
+.scroll-bottom{
+  position:fixed;
+  right:18px;
+  bottom:86px;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:80;
+  box-shadow:0 10px 22px rgba(0,0,0,.25);
+}
+.scroll-bottom.show{display:flex}
+.scroll-bottom:hover{border-color:#58a6ff;color:#58a6ff}
+
+@media(max-width:760px){
+  html,body{
+    height:var(--app-height,100dvh);
+    max-height:var(--app-height,100dvh);
+    overflow:hidden;
+  }
+
+  .header{
+    padding:10px 12px;
+    gap:9px;
+  }
+
+  .logo{
+    width:36px;
+    height:36px;
+    border-radius:9px;
+    font-size:19px;
+  }
+
+  .htext{
+    min-width:0;
+    flex:1;
+  }
+
+  .htext h1{
+    font-size:14px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .htext p{
+    display:none;
+  }
+
+  .hright{
+    gap:6px;
+  }
+
+  .status{
+    display:none;
+  }
+
+  .setup-btn{
+    font-size:12px;
+    padding:7px 10px;
+    border-radius:8px;
+  }
+
+  .config{
+    padding:12px;
+    max-height:42dvh;
+    overflow-y:auto;
+  }
+
+  .config-row{
+    display:block;
+  }
+
+  .config-row + .config-row{
+    margin-top:9px;
+  }
+
+  .cfg-label{
+    display:block;
+    min-width:0;
+    margin-bottom:5px;
+  }
+
+  .cfg-input{
+    width:100%;
+    min-width:0;
+    height:39px;
+  }
+
+  .cfg-save{
+    width:100%;
+    margin-top:3px;
+    height:39px;
+  }
+
+  .cfg-info,
+  .cfg-note{
+    font-size:10.5px;
+    line-height:1.55;
+  }
+
+  .chat{
+    flex:1 1 0;
+    min-height:0;
+    padding:12px 10px 18px;
+    gap:10px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .welcome{
+    padding:12px 4px 8px;
+  }
+
+  .welcome .wicon{
+    font-size:34px;
+  }
+
+  .welcome h2{
+    font-size:15px;
+  }
+
+  .welcome p{
+    font-size:12px;
+  }
+
+  .welcome .steps{
+    font-size:11px;
+    line-height:1.8;
+    padding:10px 12px;
+  }
+
+  .msg{
+    max-width:100%;
+    gap:7px;
+  }
+
+  .msg.user{
+    padding-left:38px;
+  }
+
+  .msg.bot{
+    padding-right:24px;
+  }
+
+  .av{
+    width:27px;
+    height:27px;
+    border-radius:8px;
+    font-size:12px;
+  }
+
+  .bub{
+    padding:10px 12px;
+    font-size:13px;
+    line-height:1.55;
+    max-width:calc(100vw - 72px);
+    overflow-wrap:anywhere;
+  }
+
+  .quick{
+    padding:7px 10px 7px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    max-height:48px;
+    gap:7px;
+    -webkit-overflow-scrolling:touch;
+    border-top:1px solid var(--border);
+  }
+
+  .quick::-webkit-scrollbar{
+    display:none;
+  }
+
+  .qbtn{
+    flex:0 0 auto;
+    font-size:11.5px;
+    padding:7px 11px;
+    white-space:nowrap;
+  }
+
+  .limit{
+    padding:0 10px 7px;
+    font-size:10.5px;
+  }
+
+  .input-row{
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    gap:8px;
+    flex:0 0 auto;
+  }
+
+  .ibox{
+    padding:8px 9px;
+    border-radius:12px;
+  }
+
+  textarea{
+    font-size:16px;
+    max-height:82px;
+    line-height:1.35;
+  }
+
+  .sbtn{
+    width:34px;
+    height:34px;
+    border-radius:8px;
+  }
+
+  .lbtn{
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    font-size:10.5px;
+  }
+
+  .toast{
+    bottom:74px;
+    max-width:calc(100vw - 22px);
+    white-space:normal;
+    text-align:center;
+  }
+
+  .scroll-bottom{
+    right:12px;
+    bottom:76px;
+    width:34px;
+    height:34px;
+  }
+}
+
+@media(max-width:380px){
+  .header{
+    padding:9px 9px;
+  }
+
+  .setup-btn{
+    padding:7px 8px;
+    font-size:11px;
+  }
+
+  .htext h1{
+    font-size:13px;
+  }
+
+  .bub{
+    max-width:calc(100vw - 64px);
+    font-size:12.7px;
+  }
+
+  .qbtn{
+    font-size:11px;
+    padding:7px 10px;
+  }
+}
+
+@media(orientation:landscape) and (max-height:520px){
+  .config{
+    max-height:52dvh;
+  }
+
+  .welcome{
+    padding-top:4px;
+  }
+
+  .welcome .steps{
+    display:none;
+  }
+
+  .quick{
+    padding-top:6px;
+    padding-bottom:6px;
+  }
+
+  .input-row{
+    padding-top:7px;
+    padding-bottom:7px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🏗</div>
+  <div class="htext">
+    <h1>Vikaspuri House Assistant</h1>
+    <p>Live Google Sheet • ChatGPT • English / తెలుగు</p>
+  </div>
+  <div class="hright">
+    <div class="status">
+      <div class="dot" id="dot"></div>
+      <span id="statusTxt">Not connected</span>
+    </div>
+    <button class="setup-btn" onclick="toggleSetup()">⚙ Setup</button>
+  </div>
+</div>
+
+<div class="config" id="cfgPanel">
+  <div class="cfg-note">⚠️ Demo note: this HTML runs in the browser. Do not share it publicly with secret API keys. The Google Sheet is preconfigured.</div>
+  <div class="config-row">
+    <span class="cfg-label">OpenAI API Key</span>
+    <input class="cfg-input" id="oKey" type="password" placeholder="Paste OpenAI key once for this browser">
+  </div>
+  <div class="config-row">
+    <span class="cfg-label">Model</span>
+    <input class="cfg-input" id="modelName" placeholder="gpt-4o-mini" value="gpt-4o-mini">
+  </div>
+  <div class="config-row">
+    <button class="cfg-save" onclick="saveAndConnect()">✓ Save</button>
+  </div>
+  <div class="cfg-info">
+    <strong style="color:var(--text)">Sheet connection:</strong> preconfigured for Vikaspuri House.<br>
+    Expected tabs: <strong style="color:#f0883e">Owners, Transactions, Milestones, Land, FloorDetails, Documents</strong><br>
+    Document links are not shown directly in answers; the assistant summarizes available document details.
+  </div>
+</div>
+
+<div class="chat" id="chat">
+  <div class="welcome" id="welcome">
+    <div class="wicon">🏢</div>
+    <h2>నమస్కారం! Welcome to Vikaspuri House</h2>
+    <p>Your live Google Sheet based construction assistant.<br>
+    Ask in <strong style="color:#58a6ff">English</strong> or <strong style="color:#f0883e">Telugu</strong>.</p>
+    <div class="steps">
+      <strong style="color:var(--text)">Quick Start:</strong><br>
+      1️⃣ Sheet is already connected for Vikaspuri House<br>
+      2️⃣ Click <strong style="color:#58a6ff">⚙ Setup</strong> only to paste your OpenAI key once<br>
+      3️⃣ Ask about owners, costs, sale deed, transactions, milestones, or documents<br>
+      4️⃣ Document links will be summarized, not shown directly
+    </div>
+  </div>
+</div>
+
+<div class="quick">
+  <button class="qbtn" onclick="ask('Who are the owners of each floor?')">👤 Floor owners</button>
+  <button class="qbtn" onclick="ask('Give me a sale deed summary with all important details. Do not show document links.')">📄 Sale deed</button>
+  <button class="qbtn" onclick="ask('What is the total construction cost so far?')">💰 Total cost</button>
+  <button class="qbtn" onclick="ask('Show all transactions in a short summary.')">📋 Transactions</button>
+  <button class="qbtn" onclick="ask('What is the land purchase and registration cost?')">🏠 Land cost</button>
+  <button class="qbtn" onclick="ask('Which construction milestones are completed?')">🏗 Milestones</button>
+  <button class="qbtn" onclick="ask('ప్రతి ఫ్లోర్ యజమాని మరియు ఖర్చు వివరాలు చెప్పండి')">🇮🇳 Telugu</button>
+</div>
+
+<div class="limit" id="limit">20 prompts available in this 15-minute window</div>
+
+<div class="input-row">
+  <div class="ibox">
+    <textarea id="inp" rows="1"
+      placeholder="Ask about costs, owners, transactions... English or Telugu"
+      onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+    <button class="sbtn" id="sendBtn" onclick="sendMsg()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  <button class="lbtn" id="lbtn" onclick="toggleLang()">EN</button>
+</div>
+
+<button class="scroll-bottom" id="scrollBottom" type="button" title="Scroll to latest">↓</button>
+<div class="toast" id="toast"></div>
+
+<script>
+
+function setAppHeight(){
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', `${h}px`);
+}
+window.addEventListener('resize', setAppHeight);
+window.addEventListener('orientationchange', setAppHeight);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', setAppHeight);
+  window.visualViewport.addEventListener('scroll', setAppHeight);
+}
+setAppHeight();
+
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const COOLDOWN_MS = 5 * 60 * 1000;
+const RATE_KEY = 'vikaspuri_openai_rate_v1';
+
+const PRECONFIGURED_SHEETS_API_KEY = 'AIzaSyAoSlfYBZ2SyqzD_ad906lMfdiucPdgzNQ';
+const PRECONFIGURED_SHEET_ID = '1p80R9tppXbyer2t--F1DA6XCyxb-i6KvDSaQH53vZXU';
+
+let cfg = {
+  o:'',
+  s: PRECONFIGURED_SHEETS_API_KEY,
+  sid: PRECONFIGURED_SHEET_ID,
+  model:'gpt-4o-mini'
+};
+let lang = 'en';
+let sheetData = {};
+
+function init(){
+  const chatArea = document.getElementById('chat');
+  const scrollBtn = document.getElementById('scrollBottom');
+  const input = document.getElementById('inp');
+
+  chatArea.addEventListener('scroll', updateScrollButton);
+  if(scrollBtn) scrollBtn.addEventListener('click', scrollChatToBottom);
+
+  input.addEventListener('focus', () => {
+    setTimeout(() => {
+      setAppHeight();
+      scrollChatToBottom();
+    }, 300);
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(setAppHeight, 100);
+  });
+
+  const saved = localStorage.getItem('vikaspuri_cfg_openai_v1');
+  if(saved){
+    try{ cfg = {...cfg,...JSON.parse(saved)}; }catch(e){}
+    document.getElementById('oKey').value = cfg.o||'';
+    document.getElementById('modelName').value = cfg.model||'gpt-4o-mini';
+  }
+  autoConnect();
+  updateRateUi();
+  setInterval(updateRateUi, 1000);
+}
+
+async function autoConnect(){
+  setStatus('Connecting...','#f0883e');
+  await loadSheets();
+}
+
+async function saveAndConnect(){
+  cfg.o = document.getElementById('oKey').value.trim();
+  cfg.s = PRECONFIGURED_SHEETS_API_KEY;
+  cfg.sid = PRECONFIGURED_SHEET_ID;
+  cfg.model = document.getElementById('modelName').value.trim() || 'gpt-4o-mini';
+
+  if(!cfg.o){
+    toast('Please paste the OpenAI API key');return;
+  }
+
+  localStorage.setItem('vikaspuri_cfg_openai_v1', JSON.stringify(cfg));
+  document.getElementById('cfgPanel').style.display='none';
+  toast('OpenAI key saved locally for this browser');
+  setStatus('Connecting...','#f0883e');
+  await loadSheets();
+}
+
+function setStatus(txt, color){
+  document.getElementById('statusTxt').textContent = txt;
+  document.getElementById('dot').style.background = color;
+}
+
+async function loadSheets(){
+  const tabs = ['Owners','Transactions','Milestones','Land','FloorDetails','Documents'];
+  sheetData = {};
+  let loaded = 0;
+
+  for(const tab of tabs){
+    try{
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${cfg.sid}/values/${encodeURIComponent(tab)}?key=${cfg.s}`;
+      const r = await fetch(url);
+      if(r.ok){
+        const d = await r.json();
+        sheetData[tab] = d.values || [];
+        loaded++;
+      }
+    }catch(e){}
+  }
+
+  if(loaded > 0){
+    setStatus(`✓ Connected • ${loaded} tabs loaded`, '#3fb950');
+    toast(`Sheet connected! ${loaded} tabs loaded ✓`);
+  } else {
+    setStatus('Sheet error — check key & sharing', '#f55');
+    toast('Could not load sheet. Check Sheets API key, Sheet ID, and sharing.');
+  }
+}
+
+function stripLinks(value){
+  return String(value || '')
+    .replace(/https?:\/\/\S+/g, '[document link hidden]')
+    .replace(/docs\.google\.com\/\S+/g, '[document link hidden]')
+    .replace(/drive\.google\.com\/\S+/g, '[document link hidden]');
+}
+
+function summarizeDocumentsForContext(rows){
+  if(!rows || !rows.length) return '';
+  const headers = rows[0] || [];
+  let out = '\\n=== Documents Summary, links hidden ===\\n';
+
+  for(let i=1; i<rows.length; i++){
+    const row = rows[i] || [];
+    const hasValue = row.some(c => String(c || '').trim());
+    if(!hasValue) continue;
+
+    const pairs = headers.map((h,j) => {
+      const header = h || 'Column' + (j+1);
+      const value = stripLinks(row[j] || '-');
+      return `${header}: ${value}`;
+    }).join(' | ');
+
+    out += pairs + '\\n';
+  }
+
+  out += 'Instruction: Never display raw document links to the user. Provide a small summary from available document row details. If the actual document text is not loaded, say the document is listed in records but full document contents are not available in chat.\\n';
+  return out;
+}
+
+function sheetContext(){
+  if(!Object.keys(sheetData).length) {
+    return 'No sheet data loaded yet. The Google Sheet should auto-connect. If it does not, check sharing/API key.';
+  }
+
+  let out = 'PROJECT: Vikaspuri House — 4-floor apartment building, Hyderabad, India. Co-owners: 4 friends, one per floor. Data is loaded live from Google Sheets.\\n';
+
+  for(const [tab, rows] of Object.entries(sheetData)){
+    if(!rows || !rows.length) continue;
+
+    if(tab.toLowerCase() === 'documents'){
+      out += summarizeDocumentsForContext(rows);
+      continue;
+    }
+
+    out += `\\n=== ${tab} ===\\n`;
+    const headers = rows[0] || [];
+
+    for(let i=1; i<rows.length; i++){
+      const row = rows[i] || [];
+      const hasValue = row.some(c => String(c || '').trim());
+      if(!hasValue) continue;
+      out += headers.map((h,j)=>`${h || 'Column'+(j+1)}: ${stripLinks(row[j] || '-')}`).join(' | ') + '\\n';
+    }
+  }
+
+  return out;
+}
+
+function rateState(){
+  try{return JSON.parse(localStorage.getItem(RATE_KEY)) || {timestamps:[], cooldownUntil:0};}
+  catch{return {timestamps:[], cooldownUntil:0};}
+}
+function saveRateState(s){localStorage.setItem(RATE_KEY, JSON.stringify(s));}
+function cleanRateState(){
+  const now = Date.now();
+  const s = rateState();
+
+  if(s.cooldownUntil && now >= s.cooldownUntil){
+    s.cooldownUntil = 0;
+    s.timestamps = [];
+  }
+
+  s.timestamps = (s.timestamps || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  saveRateState(s);
+  return s;
+}
+function getRateStatus(){
+  const now = Date.now();
+  const s = cleanRateState();
+
+  if(s.cooldownUntil && now < s.cooldownUntil){
+    return {allowed:false, remaining:0, cooldownMs:s.cooldownUntil-now};
+  }
+
+  return {
+    allowed:s.timestamps.length < RATE_LIMIT_MAX,
+    remaining:Math.max(0, RATE_LIMIT_MAX - s.timestamps.length),
+    cooldownMs:0
+  };
+}
+function formatWait(ms){
+  const sec = Math.max(0, Math.ceil(ms/1000));
+  const m = Math.floor(sec/60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+function recordPrompt(){
+  const s = cleanRateState();
+  s.timestamps.push(Date.now());
+
+  if(s.timestamps.length > RATE_LIMIT_MAX){
+    s.cooldownUntil = Date.now() + COOLDOWN_MS;
+  }
+
+  saveRateState(s);
+}
+function updateRateUi(){
+  const st = getRateStatus();
+  const limit = document.getElementById('limit');
+
+  if(st.cooldownMs > 0){
+    limit.textContent = `Prompt limit reached. Wait ${formatWait(st.cooldownMs)} before chatting again.`;
+    limit.classList.add('warn');
+  } else {
+    limit.textContent = `${st.remaining} prompts available in this 15-minute window`;
+    limit.classList.remove('warn');
+  }
+
+  const disabled = !st.allowed;
+  document.getElementById('sendBtn').disabled = disabled;
+  document.getElementById('inp').disabled = disabled;
+  document.querySelectorAll('.qbtn').forEach(b => b.disabled = disabled);
+}
+
+async function sendMsg(overrideText){
+  const inp = document.getElementById('inp');
+  const text = (overrideText || inp.value).trim();
+  if(!text) return;
+
+  const st = getRateStatus();
+  if(!st.allowed){
+    addMsg(`Prompt limit reached. Please wait ${formatWait(st.cooldownMs)}.`, 'bot');
+    return;
+  }
+
+  inp.value=''; resize(inp);
+  removeWelcome();
+  addMsg(text,'user');
+
+  if(!cfg.o){
+    addMsg('⚠️ Please click **⚙ Setup** and paste the OpenAI API key once for this browser. The Google Sheet is already connected.','bot');
+    return;
+  }
+
+  recordPrompt();
+  updateRateUi();
+
+  const tid = showTyping();
+
+  const sys = `You are a helpful assistant for the Vikaspuri House construction project in Hyderabad, India.
+This is a 4-floor apartment building where 4 friends are co-owners — each friend owns one floor.
+The project covers everything from land purchase to full construction completion.
+
+Here is all the current project data from Google Sheets:
+${sheetContext()}
+
+Instructions:
+- Answer ONLY based on the sheet data above. If specific data is missing, say clearly: "This information is not in the records yet."
+- Use INR format with ₹ and Indian comma grouping. Use lakhs/crores where helpful.
+- Be concise by default: 4–6 bullets or one short paragraph.
+- If the user asks for sale deed, land, purchase, or document summary, you may give 6–10 short bullets.
+- Do NOT show raw Google Drive, Google Docs, or document URLs. Summarize the document details instead.
+- If a document link exists but the document text is not loaded in the Sheet data, say: "The document is listed in records, but the full document text is not available in chat."
+- For tables of data, present them clearly with labels.
+- ${lang==='te' ? 'The user asked in Telugu. Respond fully in Telugu script.' : 'Respond in English unless the user asks in Telugu.'}
+- Do not invent facts not present in the Sheet.`;
+
+  try{
+    const body = {
+      model: cfg.model || 'gpt-4o-mini',
+      input: [
+        { role: "system", content: sys },
+        { role: "user", content: text }
+      ],
+      max_output_tokens: 600,
+      temperature: 0.1,
+      text: { format: { type: "text" } }
+    };
+
+    const res = await fetch('https://api.openai.com/v1/responses', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${cfg.o}`
+      },
+      body:JSON.stringify(body)
+    });
+
+    removeTyping(tid);
+
+    if(!res.ok){
+      let errMsg = 'Unknown error';
+      try{
+        const e = await res.json();
+        errMsg = e.error?.message || errMsg;
+      }catch(e){}
+      addMsg(`❌ OpenAI error: ${errMsg}`,'bot');
+      return;
+    }
+
+    const d = await res.json();
+    const reply = d.output_text ||
+      (d.output || []).flatMap(item => item.content || []).map(part => part.text || '').join('\\n') ||
+      'Sorry, I did not get a response. Please try again.';
+
+    addMsg(reply,'bot');
+
+  }catch(e){
+    removeTyping(tid);
+    addMsg('❌ Network error. Please check your internet connection.','bot');
+  }
+}
+
+function ask(q){ sendMsg(q); }
+
+function removeWelcome(){
+  const w=document.getElementById('welcome');
+  if(w) w.remove();
+}
+
+function isNearBottom(){
+  const area = document.getElementById('chat');
+  return area.scrollHeight - area.scrollTop - area.clientHeight < 90;
+}
+
+function scrollChatToBottom(){
+  const area = document.getElementById('chat');
+  requestAnimationFrame(() => {
+    area.scrollTop = area.scrollHeight;
+    updateScrollButton();
+  });
+}
+
+function updateScrollButton(){
+  const area = document.getElementById('chat');
+  const btn = document.getElementById('scrollBottom');
+  if(!btn) return;
+  const awayFromBottom = area.scrollHeight - area.scrollTop - area.clientHeight > 140;
+  btn.classList.toggle('show', awayFromBottom);
+}
+
+function addMsg(text, role){
+  const area = document.getElementById('chat');
+  const shouldStick = isNearBottom() || role === 'user';
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const av = document.createElement('div');
+  av.className='av';
+  av.textContent = role==='user'?'U':'🤖';
+  const bub = document.createElement('div');
+  bub.className='bub';
+  bub.innerHTML = fmt(text);
+  div.appendChild(av);
+  div.appendChild(bub);
+  area.appendChild(div);
+  if(shouldStick) scrollChatToBottom();
+  else updateScrollButton();
+}
+
+function fmt(t){
+  return String(t)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<code style="background:#21262d;padding:1px 5px;border-radius:4px;font-size:12px">$1</code>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+let tc=0;
+function showTyping(){
+  const id='t'+(tc++);
+  const area=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg bot'; d.id=id;
+  d.innerHTML='<div class="av">🤖</div><div class="bub"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  area.appendChild(d);
+  scrollChatToBottom();
+  return id;
+}
+function removeTyping(id){const e=document.getElementById(id);if(e)e.remove();}
+
+function toggleSetup(){
+  const c=document.getElementById('cfgPanel');
+  c.style.display=c.style.display==='flex'?'none':'flex';
+  setTimeout(updateScrollButton, 60);
+}
+
+function toggleLang(){
+  lang=lang==='en'?'te':'en';
+  const b=document.getElementById('lbtn');
+  b.textContent=lang==='te'?'తె':'EN';
+  b.classList.toggle('te',lang==='te');
+  document.getElementById('inp').placeholder=lang==='te'
+    ?'ఇక్కడ తెలుగులో అడగండి... ఖర్చులు, యజమానులు, లావాదేవీలు'
+    :'Ask about costs, owners, transactions... English or Telugu';
+}
+
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,90)+'px';}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+init();
+</script>
+</body>
+</html>
