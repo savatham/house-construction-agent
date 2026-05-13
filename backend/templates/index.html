@@ -293,6 +293,7 @@ let remaining = 20;      // updated from server responses
 let cooldownEnd = 0;     // Unix ms — when cooldown expires
 let cooldownTimer = null;
 let sending = false;
+const url = "https://house-construction-agent-3.onrender.com"
 
 // ---------------------------------------------------------------------------
 // Init
@@ -319,7 +320,7 @@ function init(){
 async function checkStatus(){
   setStatus('Connecting…', '#f0883e');
   try{
-    const r = await fetch('/api/status');
+    const r = await fetch(`${url}/api/status`);
     if(!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
 
@@ -350,7 +351,7 @@ async function refreshSheet(){
   setStatus('Refreshing…', '#f0883e');
 
   try{
-    const r = await fetch('/api/refresh', { method:'POST' });
+    const r = await fetch(`${url}/api/refresh`, { method:'POST' });
     if(!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
 
@@ -394,7 +395,7 @@ async function sendMsg(overrideText){
   const tid = showTyping();
 
   try{
-    const r = await fetch('/api/chat', {
+    const r = await fetch(`${url}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text, lang })
