@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vikaspuri House — Apartment Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--surface:#161b22;--card:#21262d;--border:#30363d;
+  --accent:#f0883e;--accent2:#58a6ff;--text:#c9d1d9;--muted:#8b949e;
+  --user-bubble:#1f3a5f;--bot-bubble:#161b22;--radius:12px;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+}
+html{
+  height:100%;
+  width:100%;
+  overflow:hidden;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  height:100vh;
+  height:100dvh;
+  height:var(--app-height,100dvh);
+  max-height:100vh;
+  max-height:100dvh;
+  max-height:var(--app-height,100dvh);
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:fixed;
+  inset:0;
+}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.logo{width:42px;height:42px;background:linear-gradient(135deg,#f0883e,#c0392b);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.htext h1{font-family:var(--font-head);font-size:16px;font-weight:700;color:#fff}
+.htext p{font-size:11px;color:var(--muted);margin-top:1px}
+.hright{margin-left:auto;display:flex;align-items:center;gap:10px}
+.status{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:#f55;transition:background .3s}
+.dot.ok{background:#3fb950}
+.refresh-btn{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-body);transition:all .15s}
+.refresh-btn:hover{border-color:#58a6ff;color:#58a6ff}
+.refresh-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.chat{
+  flex:1 1 0;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:16px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  scroll-behavior:smooth;
+}
+.chat::-webkit-scrollbar{width:4px}
+.chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.msg{display:flex;gap:9px;align-items:flex-start;max-width:88%}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg.bot{align-self:flex-start}
+.av{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.msg.user .av{background:#f0883e;color:#fff;font-weight:700;font-family:var(--font-head)}
+.msg.bot .av{background:#58a6ff;color:#fff}
+.bub{padding:11px 15px;border-radius:var(--radius);font-size:13.5px;line-height:1.65}
+.msg.user .bub{background:var(--user-bubble);border-bottom-right-radius:3px}
+.msg.bot .bub{background:var(--bot-bubble);border:1px solid var(--border);border-bottom-left-radius:3px}
+.bub strong{color:#f0883e;font-weight:500}
+.bub ul{padding-left:16px;margin-top:5px}
+.bub li{margin-top:3px}
+.bub a{color:#58a6ff;text-decoration:none}
+
+.typing-dots{display:flex;gap:4px;padding:12px 15px;align-items:center}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:tdot 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+.quick{
+  padding:0 18px 10px;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  flex:0 0 auto;
+  max-height:72px;
+  overflow-y:auto;
+}
+.qbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11.5px;padding:5px 11px;border-radius:20px;cursor:pointer;font-family:var(--font-body);transition:all .15s}
+.qbtn:hover{border-color:#f0883e;color:#f0883e}
+.qbtn:disabled{opacity:.45;cursor:not-allowed}
+
+.limit{font-size:11px;color:var(--muted);padding:0 18px 8px;display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.limit.warn{color:#f0883e}
+
+.input-row{
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+  display:flex;
+  gap:9px;
+  align-items:flex-end;
+  flex:0 0 auto;
+  position:relative;
+  z-index:20;
+}
+.ibox{flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:flex-end;gap:7px;padding:9px 12px;transition:border-color .15s}
+.ibox:focus-within{border-color:#58a6ff}
+textarea{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--font-body);font-size:13.5px;resize:none;max-height:90px;line-height:1.5}
+textarea::placeholder{color:var(--muted)}
+.sbtn{background:#f0883e;border:none;color:#fff;width:32px;height:32px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sbtn:hover{opacity:.85}
+.sbtn:disabled{opacity:.45;cursor:not-allowed}
+.sbtn svg{width:14px;height:14px}
+.lbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;width:42px;height:42px;border-radius:var(--radius);cursor:pointer;font-family:var(--font-head);transition:all .15s}
+.lbtn.te{border-color:#f0883e;color:#f0883e}
+
+.welcome{text-align:center;padding:20px 16px;color:var(--muted)}
+.welcome .wicon{font-size:40px;margin-bottom:8px}
+.welcome h2{font-family:var(--font-head);font-size:16px;color:var(--text);margin-bottom:6px}
+.welcome p{font-size:12.5px;line-height:1.7}
+.welcome .steps{margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 16px;font-size:12px;text-align:left;line-height:2}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#21262d;border:1px solid var(--border);color:var(--text);padding:7px 16px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99;white-space:nowrap}
+.toast.show{opacity:1}
+
+.scroll-bottom{
+  position:fixed;
+  right:18px;
+  bottom:86px;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:80;
+  box-shadow:0 10px 22px rgba(0,0,0,.25);
+}
+.scroll-bottom.show{display:flex}
+.scroll-bottom:hover{border-color:#58a6ff;color:#58a6ff}
+
+@media(max-width:760px){
+  html,body{
+    height:var(--app-height,100dvh);
+    max-height:var(--app-height,100dvh);
+    overflow:hidden;
+  }
+  .header{padding:10px 12px;gap:9px}
+  .logo{width:36px;height:36px;border-radius:9px;font-size:19px}
+  .htext{min-width:0;flex:1}
+  .htext h1{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .htext p{display:none}
+  .hright{gap:6px}
+  .status{display:none}
+  .refresh-btn{font-size:12px;padding:7px 10px;border-radius:8px}
+  .chat{flex:1 1 0;min-height:0;padding:12px 10px 18px;gap:10px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  .welcome{padding:12px 4px 8px}
+  .welcome .wicon{font-size:34px}
+  .welcome h2{font-size:15px}
+  .welcome p{font-size:12px}
+  .welcome .steps{font-size:11px;line-height:1.8;padding:10px 12px}
+  .msg{max-width:100%;gap:7px}
+  .msg.user{padding-left:38px}
+  .msg.bot{padding-right:24px}
+  .av{width:27px;height:27px;border-radius:8px;font-size:12px}
+  .bub{padding:10px 12px;font-size:13px;line-height:1.55;max-width:calc(100vw - 72px);overflow-wrap:anywhere}
+  .quick{padding:7px 10px 7px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:48px;gap:7px;-webkit-overflow-scrolling:touch;border-top:1px solid var(--border)}
+  .quick::-webkit-scrollbar{display:none}
+  .qbtn{flex:0 0 auto;font-size:11.5px;padding:7px 11px;white-space:nowrap}
+  .limit{padding:0 10px 7px;font-size:10.5px}
+  .input-row{padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:8px;flex:0 0 auto}
+  .ibox{padding:8px 9px;border-radius:12px}
+  textarea{font-size:16px;max-height:82px;line-height:1.35}
+  .sbtn{width:34px;height:34px;border-radius:8px}
+  .lbtn{width:38px;height:38px;border-radius:10px;font-size:10.5px}
+  .toast{bottom:74px;max-width:calc(100vw - 22px);white-space:normal;text-align:center}
+  .scroll-bottom{right:12px;bottom:76px;width:34px;height:34px}
+}
+
+@media(max-width:380px){
+  .header{padding:9px 9px}
+  .refresh-btn{padding:7px 8px;font-size:11px}
+  .htext h1{font-size:13px}
+  .bub{max-width:calc(100vw - 64px);font-size:12.7px}
+  .qbtn{font-size:11px;padding:7px 10px}
+}
+
+@media(orientation:landscape) and (max-height:520px){
+  .welcome{padding-top:4px}
+  .welcome .steps{display:none}
+  .quick{padding-top:6px;padding-bottom:6px}
+  .input-row{padding-top:7px;padding-bottom:7px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🏗</div>
+  <div class="htext">
+    <h1>Vikaspuri House Assistant</h1>
+    <p>Live Google Sheet • ChatGPT • English / తెలుగు</p>
+  </div>
+  <div class="hright">
+    <div class="status">
+      <div class="dot" id="dot"></div>
+      <span id="statusTxt">Connecting…</span>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="refreshSheet()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="chat" id="chat">
+  <div class="welcome" id="welcome">
+    <div class="wicon">🏢</div>
+    <h2>నమస్కారం! Welcome to Vikaspuri House</h2>
+    <p>Your live Google Sheet based construction assistant.<br>
+    Ask in <strong style="color:#58a6ff">English</strong> or <strong style="color:#f0883e">Telugu</strong>.</p>
+    <div class="steps">
+      <strong style="color:var(--text)">Quick Start:</strong><br>
+      1️⃣ Sheet &amp; AI are connected on the server — no setup needed<br>
+      2️⃣ Ask about owners, costs, sale deed, transactions, milestones, or documents<br>
+      3️⃣ Use <strong style="color:#58a6ff">↻ Refresh</strong> to reload the latest sheet data at any time<br>
+      4️⃣ Document links are never shown — the assistant summarises them
+    </div>
+  </div>
+</div>
+
+<div class="quick">
+  <button class="qbtn" onclick="ask('Who are the owners of each floor?')">👤 Floor owners</button>
+  <button class="qbtn" onclick="ask('Give me a sale deed summary with all important details. Do not show document links.')">📄 Sale deed</button>
+  <button class="qbtn" onclick="ask('What is the total construction cost so far?')">💰 Total cost</button>
+  <button class="qbtn" onclick="ask('Show all transactions in a short summary.')">📋 Transactions</button>
+  <button class="qbtn" onclick="ask('What is the land purchase and registration cost?')">🏠 Land cost</button>
+  <button class="qbtn" onclick="ask('Which construction milestones are completed?')">🏗 Milestones</button>
+  <button class="qbtn" onclick="ask('ప్రతి ఫ్లోర్ యజమాని మరియు ఖర్చు వివరాలు చెప్పండి')">🇮🇳 Telugu</button>
+</div>
+
+<div class="limit" id="limit">Ready to chat</div>
+
+<div class="input-row">
+  <div class="ibox">
+    <textarea id="inp" rows="1"
+      placeholder="Ask about costs, owners, transactions... English or Telugu"
+      onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+    <button class="sbtn" id="sendBtn" onclick="sendMsg()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  <button class="lbtn" id="lbtn" onclick="toggleLang()">EN</button>
+</div>
+
+<button class="scroll-bottom" id="scrollBottom" type="button" title="Scroll to latest">↓</button>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Viewport height fix (keyboard-aware on mobile)
+// ---------------------------------------------------------------------------
+function setAppHeight(){
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', `${h}px`);
+}
+window.addEventListener('resize', setAppHeight);
+window.addEventListener('orientationchange', setAppHeight);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', setAppHeight);
+  window.visualViewport.addEventListener('scroll', setAppHeight);
+}
+setAppHeight();
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let lang = 'en';
+let remaining = 20;      // updated from server responses
+let cooldownEnd = 0;     // Unix ms — when cooldown expires
+let cooldownTimer = null;
+let sending = false;
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+function init(){
+  const chatArea = document.getElementById('chat');
+  const scrollBtn = document.getElementById('scrollBottom');
+  const input = document.getElementById('inp');
+
+  chatArea.addEventListener('scroll', updateScrollButton);
+  if(scrollBtn) scrollBtn.addEventListener('click', scrollChatToBottom);
+
+  input.addEventListener('focus', () => {
+    setTimeout(() => { setAppHeight(); scrollChatToBottom(); }, 300);
+  });
+  input.addEventListener('blur', () => { setTimeout(setAppHeight, 100); });
+
+  checkStatus();
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/status
+// ---------------------------------------------------------------------------
+async function checkStatus(){
+  setStatus('Connecting…', '#f0883e');
+  try{
+    const r = await fetch('/api/status');
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+
+    if(d.tabs_loaded > 0){
+      setStatus(`✓ Connected • ${d.tabs_loaded} tabs`, '#3fb950');
+    } else {
+      setStatus('Sheet not loaded', '#f55');
+      toast('Sheet data unavailable. Check GOOGLE_SHEETS_API_KEY and GOOGLE_SHEET_ID in backend/.env');
+    }
+
+    if(!d.openai_configured){
+      addMsg('⚠️ The server is missing an OpenAI API key. Please set OPENAI_API_KEY in backend/.env and restart the server.', 'bot');
+    }
+  }catch(e){
+    setStatus('Backend offline', '#f55');
+    toast('Cannot reach the backend. Make sure the Python server is running.');
+    addMsg('⚠️ Cannot connect to the backend server. Please start it:\n\n`cd backend && python app.py`', 'bot');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/refresh
+// ---------------------------------------------------------------------------
+async function refreshSheet(){
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = '↻ …';
+  setStatus('Refreshing…', '#f0883e');
+
+  try{
+    const r = await fetch('/api/refresh', { method:'POST' });
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+
+    if(d.tabs_loaded > 0){
+      setStatus(`✓ Connected • ${d.tabs_loaded} tabs`, '#3fb950');
+      toast(`Sheet refreshed! ${d.tabs_loaded} tabs loaded ✓`);
+    } else {
+      setStatus('Sheet error', '#f55');
+      toast('Could not load sheet data. Check server .env and sheet sharing settings.');
+    }
+  }catch(e){
+    setStatus('Backend offline', '#f55');
+    toast('Cannot reach the backend server.');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '↻ Refresh';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/chat
+// ---------------------------------------------------------------------------
+async function sendMsg(overrideText){
+  if(sending) return;
+
+  const inp = document.getElementById('inp');
+  const text = (overrideText !== undefined ? overrideText : inp.value).trim();
+  if(!text) return;
+
+  if(cooldownEnd > Date.now()){
+    toast(`Limit reached. Wait ${formatWait(cooldownEnd - Date.now())}`);
+    return;
+  }
+
+  sending = true;
+  setInputDisabled(true);
+  inp.value = ''; resize(inp);
+  removeWelcome();
+  addMsg(text, 'user');
+
+  const tid = showTyping();
+
+  try{
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, lang })
+    });
+
+    removeTyping(tid);
+    const d = await r.json();
+
+    if(r.status === 429){
+      const ms = d.cooldown_ms || 60000;
+      startCooldown(ms);
+      addMsg(`⏳ Prompt limit reached. Please wait ${formatWait(ms)} before chatting again.`, 'bot');
+      return;
+    }
+
+    if(!r.ok){
+      addMsg(`❌ ${d.error || 'Server error. Please try again.'}`, 'bot');
+      return;
+    }
+
+    if(typeof d.remaining === 'number'){
+      remaining = d.remaining;
+      updateLimitUi();
+    }
+
+    addMsg(d.reply || 'Sorry, I did not get a response.', 'bot');
+
+  }catch(e){
+    removeTyping(tid);
+    addMsg('❌ Network error. Make sure the backend server is running.', 'bot');
+  }finally{
+    sending = false;
+    if(cooldownEnd <= Date.now()) setInputDisabled(false);
+  }
+}
+
+function ask(q){ sendMsg(q); }
+
+// ---------------------------------------------------------------------------
+// Cooldown timer
+// ---------------------------------------------------------------------------
+function startCooldown(ms){
+  cooldownEnd = Date.now() + ms;
+  setInputDisabled(true);
+  updateLimitUi();
+
+  if(cooldownTimer) clearInterval(cooldownTimer);
+  cooldownTimer = setInterval(() => {
+    const left = cooldownEnd - Date.now();
+    if(left <= 0){
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+      cooldownEnd = 0;
+      remaining = 20;
+      setInputDisabled(false);
+      updateLimitUi();
+    } else {
+      updateLimitUi();
+    }
+  }, 500);
+}
+
+// ---------------------------------------------------------------------------
+// UI helpers
+// ---------------------------------------------------------------------------
+function setStatus(txt, color){
+  document.getElementById('statusTxt').textContent = txt;
+  const dot = document.getElementById('dot');
+  dot.style.background = color;
+  dot.classList.toggle('ok', color === '#3fb950');
+}
+
+function updateLimitUi(){
+  const el = document.getElementById('limit');
+  const left = cooldownEnd - Date.now();
+  if(left > 0){
+    el.textContent = `Prompt limit reached. Wait ${formatWait(left)} before chatting again.`;
+    el.classList.add('warn');
+  } else {
+    el.textContent = `${remaining} prompt${remaining !== 1 ? 's' : ''} available in this 15-minute window`;
+    el.classList.remove('warn');
+  }
+}
+
+function setInputDisabled(disabled){
+  document.getElementById('sendBtn').disabled = disabled;
+  document.getElementById('inp').disabled      = disabled;
+  document.querySelectorAll('.qbtn').forEach(b => b.disabled = disabled);
+}
+
+function removeWelcome(){
+  const w = document.getElementById('welcome');
+  if(w) w.remove();
+}
+
+function isNearBottom(){
+  const area = document.getElementById('chat');
+  return area.scrollHeight - area.scrollTop - area.clientHeight < 90;
+}
+
+function scrollChatToBottom(){
+  const area = document.getElementById('chat');
+  requestAnimationFrame(() => {
+    area.scrollTop = area.scrollHeight;
+    updateScrollButton();
+  });
+}
+
+function updateScrollButton(){
+  const area = document.getElementById('chat');
+  const btn  = document.getElementById('scrollBottom');
+  if(!btn) return;
+  btn.classList.toggle('show', area.scrollHeight - area.scrollTop - area.clientHeight > 140);
+}
+
+function addMsg(text, role){
+  const area        = document.getElementById('chat');
+  const shouldStick = isNearBottom() || role === 'user';
+  const div  = document.createElement('div');
+  div.className = `msg ${role}`;
+  const av   = document.createElement('div');
+  av.className = 'av';
+  av.textContent = role === 'user' ? 'U' : '🤖';
+  const bub  = document.createElement('div');
+  bub.className = 'bub';
+  bub.innerHTML = fmt(text);
+  div.appendChild(av);
+  div.appendChild(bub);
+  area.appendChild(div);
+  if(shouldStick) scrollChatToBottom();
+  else updateScrollButton();
+}
+
+function fmt(t){
+  return String(t)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<code style="background:#21262d;padding:1px 5px;border-radius:4px;font-size:12px">$1</code>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+let _tc = 0;
+function showTyping(){
+  const id   = `t${_tc++}`;
+  const area = document.getElementById('chat');
+  const d    = document.createElement('div');
+  d.className = 'msg bot';
+  d.id = id;
+  d.innerHTML = '<div class="av">🤖</div><div class="bub"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  area.appendChild(d);
+  scrollChatToBottom();
+  return id;
+}
+function removeTyping(id){
+  const e = document.getElementById(id);
+  if(e) e.remove();
+}
+
+function toggleLang(){
+  lang = lang === 'en' ? 'te' : 'en';
+  const b = document.getElementById('lbtn');
+  b.textContent = lang === 'te' ? 'తె' : 'EN';
+  b.classList.toggle('te', lang === 'te');
+  document.getElementById('inp').placeholder = lang === 'te'
+    ? 'ఇక్కడ తెలుగులో అడగండి... ఖర్చులు, యజమానులు, లావాదేవీలు'
+    : 'Ask about costs, owners, transactions... English or Telugu';
+}
+
+function formatWait(ms){
+  const sec = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2,'0')}`;
+}
+
+function onKey(e){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+}
+
+function resize(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 90) + 'px';
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+init();
+</script>
+</body>
+</html>
