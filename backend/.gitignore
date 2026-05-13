@@ -1,5 +1,5 @@
 # Secret environment file — NEVER commit this
-.env
+
 
 # Python cache
 __pycache__/
